@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 40px auto;
+            max-width: 700px;
+        }
+        .box {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2, h3 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 9px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button.btn-blue {
+            width: 100%;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        button.btn-blue:hover {
+            background: #0056b3;
+        }
+        #msg {
+            text-align: center;
+            color: green;
+            font-weight: bold;
+            margin-top: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        .btn-small {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Student Management System</h2>
+    <h3 id="form-title">Add Student</h3>
+
+    <input type="hidden" id="student_id">
+
+    <label>Student Name:</label>
+    <input type="text" id="name" placeholder="Enter student name">
+
+    <label>Email:</label>
+    <input type="email" id="email" placeholder="Enter email">
+
+    <label>Course:</label>
+    <input type="text" id="course" placeholder="Enter course">
+
+    <button type="button" class="btn-blue" id="submit-btn" onclick="saveStudent()">Add Student</button>
+
+    <div id="msg"></div>
+
+    <h3>Student List</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Course</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="student-data"></tbody>
+    </table>
+</div>
+
+<script>
+window.onload = loadStudents;
+
+function loadStudents() {
+    fetch('api.php')
+        .then(res => res.json())
+        .then(data => {
+            let rows = '';
+            data.forEach(s => {
+                rows += `<tr>
+                    <td>${s.id}</td>
+                    <td>${s.name}</td>
+                    <td>${s.email}</td>
+                    <td>${s.course}</td>
+                    <td>
+                        <button class="btn-small" onclick="editStudent(${s.id}, '${s.name}', '${s.email}', '${s.course}')">Edit</button>
+                        <button class="btn-small" onclick="deleteStudent(${s.id})">Delete</button>
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('student-data').innerHTML = rows;
+        });
+}
+
+function saveStudent() {
+    let id = document.getElementById('student_id').value;
+    let name = document.getElementById('name').value;
+    let email = document.getElementById('email').value;
+    let course = document.getElementById('course').value;
+
+    if (!name || !email || !course) {
+        alert('Please fill all fields');
+        return;
+    }
+
+    let studentData = { id: id, name: name, email: email, course: course };
+
+    if (id) {
+        fetch('api.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(studentData)
+        })
+        .then(res => res.json())
+        .then(res => {
+            showMsg(res.message);
+            resetForm();
+            loadStudents();
+        });
+    } else {
+        fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(studentData)
+        })
+        .then(res => res.json())
+        .then(res => {
+            showMsg(res.message);
+            resetForm();
+            loadStudents();
+        });
+    }
+}
+
+function editStudent(id, name, email, course) {
+    document.getElementById('student_id').value = id;
+    document.getElementById('name').value = name;
+    document.getElementById('email').value = email;
+    document.getElementById('course').value = course;
+
+    document.getElementById('form-title').innerText = 'Edit Student';
+    document.getElementById('submit-btn').innerText = 'Update Student';
+}
+
+function deleteStudent(id) {
+    if (confirm('Are you sure you want to delete?')) {
+        fetch('api.php?id=' + id, {
+            method: 'DELETE'
+        })
+        .then(res => res.json())
+        .then(res => {
+            showMsg(res.message);
+            loadStudents();
+        });
+    }
+}
+
+function resetForm() {
+    document.getElementById('student_id').value = '';
+    document.getElementById('name').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('course').value = '';
+    document.getElementById('form-title').innerText = 'Add Student';
+    document.getElementById('submit-btn').innerText = 'Add Student';
+}
+
+function showMsg(text) {
+    let msgBox = document.getElementById('msg');
+    msgBox.innerText = text;
+    setTimeout(() => { msgBox.innerText = ''; }, 3000);
+}
+</script>
+
+</body>
+</html>
